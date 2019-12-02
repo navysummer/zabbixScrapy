@@ -40,7 +40,7 @@ class Zabbix(object):
         if "Content-Length" in r.headers or title == 'Zabbix':
             return False
         else:
-            self.sid = soup.find('a',class_='top-nav-signout').attrs['onclick'].split("'")[1].split('&')[1].split('=')[1]
+            self.sid = soup.find('input',id='sid').attrs['value']
             return True
 
     def getSession(self):
