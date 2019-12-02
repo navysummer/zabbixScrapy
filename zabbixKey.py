@@ -2,6 +2,7 @@
 import requests
 from bs4 import BeautifulSoup
 from lxml import etree
+from urllib.parse import urlparse,parse_qs
 
 class Zabbix(object):
     """docstring for Zabbix"""
@@ -11,12 +12,24 @@ class Zabbix(object):
         self.user = user
         self.password = password
         self.cookies = None
+        self.sid = None
         self.zbx_sessionid = None
         self.PHPSESSID = None
-        self.sid = None
+        self.apikey = None
         self.___login()
+
     def ___login(self):
+        self.urlinfo = urlparse(self.url)
+        Host = self.urlinfo.netloc
+        scheme = self.urlinfo.scheme
+        path = self.urlinfo.path
+        params = self.urlinfo.params
+        querys = self.urlinfo.query
+        queryDict = parse_qs(querys)
+        self.apikey = queryDict['apikey'][0]
+        fragment = self.urlinfo.fragment
         login_headers = {
+            "Host":Host,
             "Referer":self.url,
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
         }
@@ -26,19 +39,22 @@ class Zabbix(object):
             "autologin":"1",
             "enter": "Sign in"
         }
-        login_url = self.url + "/index.php"
-        r = requests.post(login_url,data=login_data,headers=login_headers)
+        login_url = scheme + "://" + Host + path + "index.php"
+        r = requests.post(login_url,data=login_data,headers=login_headers,allow_redirects=False)
         cookies = r.cookies.get_dict()
         if not cookies:
             raise Exception('login fail')
-        if 'PHPSESSID' not in cookies:
-            raise Exception('login fail')
+        cookies.update({'apikey':self.apikey})
         if 'zbx_sessionid' not in cookies:
             raise Exception('login fail')
-        self.cookies = cookies
-        self.PHPSESSID = cookies['PHPSESSID']
         self.zbx_sessionid = cookies['zbx_sessionid']
-        html_doc = r.text.encode("gbk", 'ignore').decode("gbk", "ignore")
+        self.cookies = cookies
+        res = requests.get(login_url,cookies=cookies)
+        new_cookies = res.cookies.get_dict()
+        if 'PHPSESSID' not in new_cookies:
+            raise Exception('login fail')
+        self.PHPSESSID = new_cookies['PHPSESSID']
+        html_doc = res.text.encode("gbk", 'ignore').decode("gbk", "ignore")
         soup = BeautifulSoup(html_doc, 'html.parser')
         sid = soup.find('input',id='sid')
         if not sid:
@@ -56,7 +72,10 @@ class Zabbix(object):
     def ___logout(self):
         if self.sid is None:
             raise Exception('login fail')
-        logout_url = self.url + "/index.php?reconnect=1"
+        Host = self.urlinfo.netloc
+        scheme = self.urlinfo.scheme
+        path = self.urlinfo.path
+        logout_url = scheme + "://" + Host + path + "index.php?reconnect=1"
         logout_data = {
             "sid":self.sid
         }
@@ -71,6 +90,4 @@ class Zabbix(object):
         data = tree.xpath(xpath_str)
         self.___logout()
         return data
-
-
 
