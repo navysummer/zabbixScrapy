@@ -4,10 +4,10 @@ from bs4 import BeautifulSoup
 from lxml import etree
 from urllib.parse import urlparse,parse_qs
 
-class Zabbix(object):
-    """docstring for Zabbix"""
+class ZabbixKey(object):
+    """docstring for ZabbixKey"""
     def __init__(self, url,user,password):
-        super(Zabbix, self).__init__()
+        super(ZabbixKey, self).__init__()
         self.url = url
         self.user = user
         self.password = password
