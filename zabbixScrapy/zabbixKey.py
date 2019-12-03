@@ -1,6 +1,5 @@
 # -*- coding: UTF-8 -*-
 import requests
-from bs4 import BeautifulSoup
 from lxml import etree
 try:
     from urllib.parse import urlparse,parse_qs
@@ -58,11 +57,12 @@ class ZabbixKey(object):
             raise Exception('login fail')
         self.PHPSESSID = new_cookies['PHPSESSID']
         html_doc = res.text.encode("gbk", 'ignore').decode("gbk", "ignore")
-        soup = BeautifulSoup(html_doc, 'html.parser')
-        sid = soup.find('input',id='sid')
+        tree = etree.HTML(html_doc)
+        xpath_str = "(//input[@id='sid'])[1]/@value"
+        sid = tree.xpath(xpath_str)
         if not sid:
             raise Exception('login fail')
-        self.sid = sid.attrs['value']
+        self.sid = sid[0]
 
     def getSession(self):
         session = {
