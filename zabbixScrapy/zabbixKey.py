@@ -2,7 +2,10 @@
 import requests
 from bs4 import BeautifulSoup
 from lxml import etree
-from urllib.parse import urlparse,parse_qs
+try:
+    from urllib.parse import urlparse,parse_qs
+except ImportError:
+    from urlparse import urlparse,parse_qs
 
 class ZabbixKey(object):
     """docstring for ZabbixKey"""
